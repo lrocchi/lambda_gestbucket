@@ -1,0 +1,26 @@
+{
+  "name": "lambda_gestbucket",
+  "version": "1.0.0",
+  "description": "Gestore Bucket",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lrocchi/lambda_gestbucket.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lrocchi/lambda_gestbucket/issues"
+  },
+  "homepage": "https://github.com/lrocchi/lambda_gestbucket#readme",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.110",
+    "@types/aws-sdk": "^2.7.0",
+    "@types/node": "^18.13.0",
+    "esbuild-register": "^3.4.2"
+  },
+  "type": "module"
+}
