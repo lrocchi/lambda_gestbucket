@@ -1,9 +1,8 @@
-'use strict';
+"use strict";
 
-const https = require('https');
-const AWS = require('aws-sdk')
-const s3 = new AWS.S3()
-
+const https = require("https");
+const AWS = require("aws-sdk");
+const s3 = new AWS.S3();
 
 const HOSTNAME = process.env.HOST_NAME || "localhost";
 
@@ -11,36 +10,44 @@ var jsonDocument = JSON.stringify({
   documentKey: "",
   documentState: "",
   checkSum: "",
-  contentLenght: 0
-})
-
+  contentLenght: 0,
+});
 
 /**
  * Event Handler
- * 
- * @param {*} event 
- * @returns 
+ *
+ * @param {*} event
+ * @returns
  */
 exports.handler = async (event) => {
   var bucketName;
 
   var params = {
     Bucket: "",
-    Key: ""
+    Key: "",
   };
 
-  event.Records.forEach(record => {
+  event.Records.forEach((record) => {
     bucketName = record.s3.bucket.name;
     jsonDocument.documentKey = record.s3.object.key;
     jsonDocument.contentLenght = record.s3.object.size;
 
-    if (record.eventName == "ObjectCreated:*" || record.eventName == "ObjectRestore:Completed") {
+    if (
+      record.eventName == "ObjectCreated:*" ||
+      record.eventName == "ObjectRestore:Completed"
+    ) {
       jsonDocument.documentState = "AVAILABLE";
     }
-    if (record.eventName == "LifecycleTransition" || record.eventName == "ObjectRestore:Delete") {
+    if (
+      record.eventName == "LifecycleTransition" ||
+      record.eventName == "ObjectRestore:Delete"
+    ) {
       jsonDocument.documentState = "FREEZED";
     }
-    if (record.eventName == "LifecycleExpiration:Delete" || evenrecord.eventNameName == "ObjectRemoved:Delete") {
+    if (
+      record.eventName == "LifecycleExpiration:Delete" ||
+      evenrecord.eventNameName == "ObjectRemoved:Delete"
+    ) {
       jsonDocument.documentState = "DELETED";
     }
 
@@ -52,26 +59,22 @@ exports.handler = async (event) => {
         console.error(err);
       } else {
         var doc = getDocumentFromDB(jsonDocument.documentKey);
-        
+
         jsonDocument.checkSum = hashDocument(data.Body, doc.documentType);
-         
+
         const res = updateDynamo(jsonDocument);
-        
-      } 
-    })
+      }
+    });
   });
 
   const response = {
-    statusCode: 200
+    statusCode: 200,
   };
 
   return response;
+};
 
-}
-
-const getDocumentFromDB = (docKey) => {
-
-}
+const getDocumentFromDB = (docKey) => {};
 
 /**
  * Do a request with options not provided.
@@ -86,9 +89,9 @@ function getDocumentFromDB(docKey) {
     hostname: HOSTNAME,
     path: "/safestorage/internal/v1/documents/" + docKey,
     headers: {
-      'Content-Type': 'application/json',
-    }
-  }
+      "Content-Type": "application/json",
+    },
+  };
   return new Promise((resolve, reject) => {
     const req = https.request(options, (res) => {
       // res.setEncoding("utf8");
@@ -112,33 +115,32 @@ function getDocumentFromDB(docKey) {
   });
 }
 
-var crypto = require('crypto');
-
+var crypto = require("crypto");
 
 const hashDocument = (document, docType) => {
   var hash;
   if (docType == "PN_AAR") {
-    hash = crypto.createHash('md5').update(document).digest('hex');
+    hash = crypto.createHash("md5").update(document).digest("hex");
   } else {
-    hash = crypto.createHash('sha256').update(document).digest('hex');
+    hash = crypto.createHash("sha256").update(document).digest("hex");
   }
 
   return hash;
-}
+};
 
 /**
  * TO DO
  */
-c
+
 function updateDynamo(data) {
   const options = {
     method: "PATCH",
     hostname: HOSTNAME,
     path: "/safestorage/internal/v1/documents/" + data.documentKey,
     headers: {
-      'Content-Type': 'application/json',
-    }
-  }
+      "Content-Type": "application/json",
+    },
+  };
   return new Promise((resolve, reject) => {
     const req = https.request(options, (res) => {
       // res.setEncoding("utf8");
