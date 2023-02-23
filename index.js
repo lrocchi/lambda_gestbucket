@@ -1,88 +1,85 @@
 "use strict";
-
 const https = require("https");
 const AWS = require("aws-sdk");
 const s3 = new AWS.S3();
-
 const HOSTNAME = process.env.HOST_NAME || "localhost";
 
-var jsonDocument = JSON.stringify({
+var jsonDocument = {
   documentKey: "",
   documentState: "",
   checkSum: "",
   contentLenght: 0,
-});
-
+};
 /**
- * Event Handler
- *
- * @param {*} event
- * @returns
- */
+* Event Handler
+*
+* @param {*} event
+* @returns
+*/
 exports.handler = async (event) => {
+  console.log(event);
   var bucketName;
-
+  console.log("Buket Name: " + event.Records[0].s3.object.name);
+  console.log("Object Key: " + event.Records[0].s3.object.key);
+  console.log("Object Size: " + event.Records[0].s3.object.size);
   var params = {
     Bucket: "",
     Key: "",
   };
-
-  event.Records.forEach((record) => {
-    bucketName = record.s3.bucket.name;
-    jsonDocument.documentKey = record.s3.object.key;
-    jsonDocument.contentLenght = record.s3.object.size;
-
-    if (
-      record.eventName == "ObjectCreated:*" ||
-      record.eventName == "ObjectRestore:Completed"
-    ) {
+  //event.Records.forEach((record) => {
+  bucketName = event.Records[0].s3.bucket.name;
+  jsonDocument.documentKey = event.Records[0].s3.object.key;
+  switch (event.Records[0].eventName) {
+    case "ObjectCreated:*":
+      break;
+    case "ObjectCreated:Put":
+      jsonDocument.contentLenght = event.Records[0].s3.object.size;
       jsonDocument.documentState = "AVAILABLE";
-    }
-    if (
-      record.eventName == "LifecycleTransition" ||
-      record.eventName == "ObjectRestore:Delete"
-    ) {
+      params.Bucket = bucketName;
+      params.Key = jsonDocument.documentKey;
+      const { Body } = await s3.getObject(params).promise();
+      console.log(Body);
+      var doc = await getDocumentFromDB(jsonDocument.documentKey);
+      console.log(doc);
+      jsonDocument.checkSum = hashDocument(Body, doc.documentType);
+      console.log(jsonDocument);
+      break;
+    case "ObjectRestore:Completed":
+      jsonDocument.documentState = "AVAILABLE";
+      break;
+    case "LifecycleTransition":
       jsonDocument.documentState = "FREEZED";
-    }
-    if (
-      record.eventName == "LifecycleExpiration:Delete" ||
-      evenrecord.eventNameName == "ObjectRemoved:Delete"
-    ) {
+      break;
+    case "ObjectRestore:Delete":
+      jsonDocument.documentState = "FREEZED";
+      break;
+    case "LifecycleExpiration:Delete":
       jsonDocument.documentState = "DELETED";
-    }
-
-    params.Bucket = bucketName;
-    params.Key = jsonDocument.documentKey;
-    // Get S3 file from source and transfer to target.
-    s3.getObject(params, (err, data) => {
-      if (err) {
-        console.error(err);
-      } else {
-        var doc = getDocumentFromDB(jsonDocument.documentKey);
-
-        jsonDocument.checkSum = hashDocument(data.Body, doc.documentType);
-
-        const res = updateDynamo(jsonDocument);
-      }
-    });
-  });
-
+      break;
+    case "ObjectRemoved:Delete":
+      jsonDocument.documentState = "DELETED";
+      break;
+    default:
+      const response = {
+        statusCode: 200,
+      };
+    return response;
+  }
+  const res = await updateDynamo(jsonDocument);
+  console.log(res);
+  console.log("############## EXIT  ####################");
   const response = {
     statusCode: 200,
   };
-
   return response;
 };
-
-const getDocumentFromDB = (docKey) => {};
-
 /**
- * Do a request with options not provided.
- *
- * @param {Object} options
- * @param {Object} data
- * @return {Promise} a promise of request
- */
+* Do a request with options not provided.
+*
+* @param {Object} options
+* @param {Object} data
+* @return {Promise} a promise of request
+*/
 function getDocumentFromDB(docKey) {
   const options = {
     method: "GET",
@@ -107,6 +104,7 @@ function getDocumentFromDB(docKey) {
     });
 
     req.on("error", (err) => {
+      console.error(err);
       reject(err);
     });
 
@@ -129,9 +127,8 @@ const hashDocument = (document, docType) => {
 };
 
 /**
- * TO DO
- */
-
+* TO DO
+*/
 function updateDynamo(data) {
   const options = {
     method: "PATCH",
@@ -156,6 +153,7 @@ function updateDynamo(data) {
     });
 
     req.on("error", (err) => {
+      console.error(err);
       reject(err);
     });
 
