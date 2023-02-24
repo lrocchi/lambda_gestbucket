@@ -34,10 +34,10 @@ exports.handler = async (event) => {
       break;
     case "ObjectCreated:Put":
       if(bucketName === STAGINGBUCKET){
-        jsonDocument.documentState = "STAGING";
+        jsonDocument.documentState = "staged";
       }else{
         jsonDocument.contentLenght = event.Records[0].s3.object.size;
-        jsonDocument.documentState = "AVAILABLE";
+        jsonDocument.documentState = "available";
         params.Bucket = bucketName;
         params.Key = jsonDocument.documentKey;
         const { Body } = await s3.getObject(params).promise();
@@ -49,19 +49,19 @@ exports.handler = async (event) => {
       console.log(jsonDocument);
       break;
     case "ObjectRestore:Completed":
-      jsonDocument.documentState = "AVAILABLE";
+      jsonDocument.documentState = "available";
       break;
     case "LifecycleTransition":
-      jsonDocument.documentState = "FREEZED";
+      jsonDocument.documentState = "freezed";
       break;
     case "ObjectRestore:Delete":
-      jsonDocument.documentState = "FREEZED";
+      jsonDocument.documentState = "freezed";
       break;
     case "LifecycleExpiration:Delete":
-      jsonDocument.documentState = "DELETED";
+      jsonDocument.documentState = "deleted";
       break;
     case "ObjectRemoved:Delete":
-      jsonDocument.documentState = "DELETED";
+      jsonDocument.documentState = "deleted";
       break;
     default:
       const response = {
