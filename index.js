@@ -26,7 +26,6 @@ exports.handler = async (event) => {
     Bucket: "",
     Key: "",
   };
-  //event.Records.forEach((record) => {
   bucketName = event.Records[0].s3.bucket.name;
   jsonDocument.documentKey = event.Records[0].s3.object.key;
   switch (event.Records[0].eventName) {
