@@ -110,7 +110,7 @@ function getDocumentFromDB(docKey) {
 }
 function updateDynamo(data) {
   const options = {
-    method: "GET",
+    method: "PATCH",
     hostname: HOSTNAME,
     port: PORT,
     path: PATHPATCH + "/" + docKey,
