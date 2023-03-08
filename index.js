@@ -1,23 +1,22 @@
 "use strict";
 
-const http = require(process.env.protocol);
+const http = require(process.env.PnSsGestoreRepositoryProtocol);
 const AWS = require("aws-sdk");
 const crypto = require("crypto");
 
-
 const s3 = new AWS.S3();
-const HOSTNAME = process.env.hostname;
-const PORT = process.env.port;
-const PATHGET  = process.env.path_getDocument;
-const PATHPATCH = process.env.path_patchDocument;
-const STAGINGBUCKET = process.env.staging_bucket;
+const HOSTNAME = process.env.PnSsHostname;
+const PORT = process.env.PnSsGestoreRepositoryPort;
+const PATHGET  = process.env.PnSsGestoreRepositoryPathGetDocument;
+const PATHPATCH = process.env.PnSsGestoreRepositoryPathPatchDocument;
+const STAGINGBUCKET = process.env.PnSsStagingBucketName;
 
 let jsonDocument = {
   documentKey: "",
   documentState: "",
 };
 exports.handler = async (event) => {
-  console.log(event);
+  console.log(JSON.stringify(event);
   let bucketName;
   console.log("Buket Name: " + event.Records[0].s3.bucket.name);
   console.log("Object Key: " + event.Records[0].s3.object.key);
@@ -41,11 +40,17 @@ exports.handler = async (event) => {
         params.Key = jsonDocument.documentKey;
         const { Body } = await s3.getObject(params).promise();
         console.log(Body);
-        let doc = await getDocumentFromDB(jsonDocument.documentKey);
+        const doc = await getDocumentFromDB(jsonDocument.documentKey);
         console.log(doc);
-        jsonDocument.checkSum = crypto.createHash(doc.documentType.checksum).update(Body).digest("hex"); 
+        console.log(doc.document);
+        console.log(doc.document.documentType.checksum);
+        console.log(JSON.stringify(doc.document.documentType.checksum));
+        jsonDocument.checkSum = crypto.createHash(doc.document.documentType.checksum).update(Body).digest("hex"); 
       }
       console.log(jsonDocument);
+      break;
+    case "ObjectCreated:Copy":
+        jsonDocument.documentState = "available";
       break;
     case "ObjectRestore:Completed":
       jsonDocument.documentState = "available";
@@ -112,13 +117,13 @@ function updateDynamo(data) {
     method: "PATCH",
     hostname: HOSTNAME,
     port: PORT,
-    path: PATHPATCH + "/" + docKey,
+    path: PATHPATCH + "/" + data.documentKey,
     headers: {
       "Content-Type": "application/json",
     }, 
   };
   return new Promise((resolve, reject) => {
-    const req = http.requesst(options, (res) => {
+    const req = http.request(options, (res) => {
       let responseBody = "";
       res.on("data", (chunk) => {
         responseBody += chunk;
@@ -131,7 +136,7 @@ function updateDynamo(data) {
       console.error(err);
       reject(err);
     });
-    req.write(data);
+    req.write(JSON.stringify(data));
     req.end();
   });
 }
