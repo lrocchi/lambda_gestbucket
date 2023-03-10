@@ -13,11 +13,12 @@ const PATHGET = process.env.PnSsGestoreRepositoryPathGetDocument;
 const PATHPATCH = process.env.PnSsGestoreRepositoryPathPatchDocument;
 const STAGINGBUCKET = process.env.PnSsStagingBucketName;
 
-let jsonDocument = {
-  documentKey: "",
-  documentState: "",
-};
 exports.handler = async (event) => {
+  let jsonDocument = {
+    documentKey: "",
+    documentState: "",
+  };
+
   console.log(JSON.stringify(event));
   let bucketName;
   console.log("Buket Name: " + event.Records[0].s3.bucket.name);
@@ -141,7 +142,7 @@ function updateDynamo(data, eventData, retries = 3, backoff = 2000) {
                 return updateDynamo(data, eventData, retries - 1, backoff * 2);
               }, backoff);
             } else {
-              console.log("FINITO =>" + responseBody);
+              console.log("Retry attempts terminated");
               sendOnQueue(eventData);
             }
             break;
