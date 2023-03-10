@@ -1,18 +1,19 @@
 "use strict";
 
-import { SendMessageCommand } from "@aws-sdk/client-sqs";
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+const sqsClient = new SQSClient({ region: "us-east-1" });
 
 const http = require(process.env.PnSsGestoreRepositoryProtocol);
 const AWS = require("aws-sdk");
 const crypto = require("crypto");
 
-const sqs = new AWS.SQS();
+
 const HOSTNAME = process.env.PnSsHostname;
 const PORT = process.env.PnSsGestoreRepositoryPort;
 const PATHGET = process.env.PnSsGestoreRepositoryPathGetDocument;
 const PATHPATCH = process.env.PnSsGestoreRepositoryPathPatchDocument;
 const STAGINGBUCKET = process.env.PnSsStagingBucketName;
-
+const SQS_QUEUE_URL = process.env.SqsQueueUrl;
 const s3 = new AWS.S3();
 
 exports.handler = async (event) => {
@@ -57,10 +58,6 @@ exports.handler = async (event) => {
           .digest("hex");
       }
       console.log(jsonDocument);
-      break;
-    case "ObjectCreated:Copy":
-      jsonDocument.documentState = "available";
-
       break;
     case "ObjectCreated:Copy":
       jsonDocument.documentState = "available";
@@ -170,17 +167,16 @@ function sendOnQueue(msg) {
   const params = {
     DelaySeconds: 10,
     MessageAttributes: {
-      Author: {
+      Timestamp: {
         DataType: "String",
-        StringValue: "Preeti",
+        StringValue: Date.now().toString(),
       },
     },
     MessageBody: msg,
-    QueueUrl:
-      "https://sqs.us-east-1.amazonaws.com/672607396920/lambda-sqs-demo-queue",
+    QueueUrl: SQS_QUEUE_URL, //"https://sqs.us-east-1.amazonaws.com/672607396920/lambda-sqs-demo-queue",
   };
 
-  sqs.sendMessage(params, (err, data) => {
+  SQSClient.sendMessage(params, (err, data) => {
     if (err) {
       console.err("Error", err);
     } else {
