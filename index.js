@@ -1,17 +1,19 @@
 "use strict";
+
 import { SendMessageCommand } from "@aws-sdk/client-sqs";
+
 const http = require(process.env.PnSsGestoreRepositoryProtocol);
 const AWS = require("aws-sdk");
 const crypto = require("crypto");
 
 const sqs = new AWS.SQS();
-const s3 = new AWS.S3();
-
 const HOSTNAME = process.env.PnSsHostname;
 const PORT = process.env.PnSsGestoreRepositoryPort;
 const PATHGET = process.env.PnSsGestoreRepositoryPathGetDocument;
 const PATHPATCH = process.env.PnSsGestoreRepositoryPathPatchDocument;
 const STAGINGBUCKET = process.env.PnSsStagingBucketName;
+
+const s3 = new AWS.S3();
 
 exports.handler = async (event) => {
   let jsonDocument = {
@@ -44,16 +46,21 @@ exports.handler = async (event) => {
         const { Body } = await s3.getObject(params).promise();
         console.log(Body);
         const doc = await getDocumentFromDB(jsonDocument.documentKey);
-        console.log(doc);
+
         console.log(doc.document);
         console.log(doc.document.documentType.checksum);
         console.log(JSON.stringify(doc.document.documentType.checksum));
+
         jsonDocument.checkSum = crypto
           .createHash(doc.document.documentType.checksum)
           .update(Body)
           .digest("hex");
       }
       console.log(jsonDocument);
+      break;
+    case "ObjectCreated:Copy":
+      jsonDocument.documentState = "available";
+
       break;
     case "ObjectCreated:Copy":
       jsonDocument.documentState = "available";
@@ -74,14 +81,12 @@ exports.handler = async (event) => {
       jsonDocument.documentState = "deleted";
       break;
     default:
-      const response = {
-        statusCode: 200,
-      };
-      return response;
+      return;
   }
   const res = await updateDynamo(jsonDocument, event);
   console.log(res);
   console.log("############## EXIT  ####################");
+  return;
 };
 function getDocumentFromDB(docKey) {
   const options = {
