@@ -93,7 +93,7 @@ function getDocumentFromDB(docKey) {
     path: PATHGET + "/" + docKey,
     headers: {
       "Content-Type": "application/json",
-    },
+    }
   };
   return new Promise((resolve, reject) => {
     const req = http.request(options, (res) => {
@@ -170,7 +170,7 @@ function sendOnQueue(msg) {
       Timestamp: {
         DataType: "String",
         StringValue: Date.now().toString(),
-      },
+      }
     },
     MessageBody: msg,
     QueueUrl: SQS_QUEUE_URL, //"https://sqs.us-east-1.amazonaws.com/672607396920/lambda-sqs-demo-queue",
