@@ -13,7 +13,7 @@ const PORT = process.env.PnSsGestoreRepositoryPort;
 const PATHGET = process.env.PnSsGestoreRepositoryPathGetDocument;
 const PATHPATCH = process.env.PnSsGestoreRepositoryPathPatchDocument;
 const STAGINGBUCKET = process.env.PnSsStagingBucketName;
-const SQS_QUEUE_URL = process.env.SqsQueueUrl;
+const SQS_QUEUE_URL = process.env.PnSsQueueUrlGestoreBucketErrori;
 const s3 = new AWS.S3();
 
 exports.handler = async (event) => {
