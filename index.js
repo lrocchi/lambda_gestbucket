@@ -1,7 +1,7 @@
 "use strict";
 
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
-const sqsClient = new SQSClient({ region: "us-east-1" });
+
 
 const http = require(process.env.PnSsGestoreRepositoryProtocol);
 const AWS = require("aws-sdk");
